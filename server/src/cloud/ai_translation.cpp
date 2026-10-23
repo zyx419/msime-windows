@@ -200,7 +200,7 @@ nlohmann::json BuildRequestBody(const Config &config, const std::vector<std::str
                              {{"role", "user"}, {"content", nlohmann::json(texts).dump()}}}}};
     if (ChatCompletions::IsOpenAiReasoningRequest(config.provider, config.model))
         body["reasoning_effort"] = ChatCompletions::kOpenAiReasoningEffort;
-    else
+    else if (ChatCompletions::AcceptsTemperature(config.provider, config.endpoint))
         body["temperature"] = 0.0;
     if (config.provider == "deepseek")
     {
