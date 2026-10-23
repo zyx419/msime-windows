@@ -47,6 +47,14 @@ inline bool AcceptsTemperature(std::string_view provider, std::string_view endpo
     return VoiceInput::VendorForRequest(provider, endpoint) != VoiceInput::ChatVendor::Anthropic;
 }
 
+// The same endpoint rejects response_format {"type": "json_object"} outright with HTTP 400
+// ("response_format.type: Input should be 'json_schema'"), which took down both AI 联想 and AI
+// 翻译 on Anthropic. The system prompts already demand bare JSON, so the field is simply left off.
+inline bool AcceptsJsonObjectFormat(std::string_view provider, std::string_view endpoint)
+{
+    return VoiceInput::VendorForRequest(provider, endpoint) != VoiceInput::ChatVendor::Anthropic;
+}
+
 // The default effort is medium, which regularly outlasts an IME request. "low" is the lowest
 // level every o-series and GPT-5 family model accepts.
 inline constexpr const char *kOpenAiReasoningEffort = "low";

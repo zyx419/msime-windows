@@ -77,7 +77,9 @@ std::string Fetch(const AiAssistant::Request &request, uint64_t generation, Jev:
     {
         // MiniMax M3.1 这类强制思考的模型会把思考过程混进 content（<think>…</think>），
         // 不剥掉的话下面的 JSON 解析直接失败，联想候选就静默消失。
-        const auto result_json = nlohmann::json::parse(metasequoia::voice::strip_reasoning(*content));
+        // 不支持 response_format 的服务（Anthropic）会把 JSON 包进 ```json 代码块。
+        const auto result_json =
+            nlohmann::json::parse(ChatCompletions::StripCodeFence(metasequoia::voice::strip_reasoning(*content)));
         const auto &candidates = result_json.at("candidates");
         if (!candidates.is_array() || candidates.empty())
         {

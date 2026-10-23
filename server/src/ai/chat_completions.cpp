@@ -29,12 +29,38 @@ size_t WriteResponse(char *data, size_t size, size_t count, void *user)
     buffer->text.append(data, bytes);
     return bytes;
 }
+
+// Only the service's own error message is surfaced; the body is never echoed whole, since some
+// relays reflect request headers (and so the token) back into it.
+std::string DescribeFailure(CURLcode performed, bool overflow, long status, const std::string &body)
+{
+    if (performed == CURLE_OPERATION_TIMEDOUT)
+        return "请求超时";
+    if (overflow)
+        return "响应超过 1 MiB";
+    if (performed != CURLE_OK)
+        return curl_easy_strerror(performed);
+    std::string detail = "HTTP " + std::to_string(status);
+    try
+    {
+        const auto root = nlohmann::json::parse(body);
+        const auto error = root.find("error");
+        if (error != root.end() && error->is_object() && error->contains("message") && error->at("message").is_string())
+            detail += "：" + error->at("message").get<std::string>();
+        else if (error != root.end() && error->is_string())
+            detail += "：" + error->get<std::string>();
+    }
+    catch (const std::exception &)
+    {
+    }
+    return detail;
+}
 } // namespace
 
 namespace ChatCompletions
 {
 std::optional<std::string> FetchContent(const std::string &endpoint, const std::string &token,
-                                        const std::string &payload, long timeout_ms)
+                                        const std::string &payload, long timeout_ms, std::string *error)
 {
     CURL *curl = curl_easy_init();
     if (!curl)
@@ -65,7 +91,11 @@ std::optional<std::string> FetchContent(const std::string &endpoint, const std::
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
     if (performed != CURLE_OK || response.overflow || status < 200 || status >= 300)
+    {
+        if (error)
+            *error = DescribeFailure(performed, response.overflow, status, response.text);
         return std::nullopt;
+    }
 
     try
     {
@@ -74,6 +104,8 @@ std::optional<std::string> FetchContent(const std::string &endpoint, const std::
     }
     catch (const std::exception &)
     {
+        if (error)
+            *error = "响应里没有 choices[0].message.content";
         return std::nullopt;
     }
 }
