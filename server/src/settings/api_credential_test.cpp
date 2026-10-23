@@ -108,6 +108,10 @@ HttpResponse PerformJsonRequest(const std::string &endpoint, const std::string &
     const std::string authorization = AiAssistant::AuthorizationHeader(token);
     if (!authorization.empty())
         headers = curl_slist_append(headers, authorization.c_str());
+    // Anthropic 的 Chat Completions 兼容层不看这个头，但 /v1/models 是原生接口，缺了它直接 400：
+    // "anthropic-version: header is required"，「查询模型」因此拿不到列表。
+    if (VoiceInput::VendorFromChatEndpoint(endpoint) == VoiceInput::ChatVendor::Anthropic)
+        headers = curl_slist_append(headers, "anthropic-version: 2023-06-01");
     curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
     NetworkProxy::ApplyToCurl(curl);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -265,6 +269,7 @@ ApiCredentialTest::Result TestBatchAsr(const ApiCredentialTest::Request &request
 ApiCredentialTest::Result TestTranslation(const ApiCredentialTest::Request &request)
 {
     std::vector<std::string> translated;
+    std::string failure;
     if (request.service == "translation.ai")
     {
         // 页面把当前生效的服务商、地址、Token 与模型原样传上来，测的就是用户眼前这一份。
@@ -281,7 +286,7 @@ ApiCredentialTest::Result TestTranslation(const ApiCredentialTest::Request &requ
                 return {false, "Jev 只能从已有候选中挑选，不能用于翻译；请在「AI 与云联想」页换成生成式服务商。"};
             return {false, "请先在「AI 与云联想」页面填写有效的接口地址、Token（Ollama 不需要）和模型。"};
         }
-        translated = AiTranslation::TextTranslateBatch(config, {"测试"}, "zh", "en");
+        translated = AiTranslation::TextTranslateBatch(config, {"测试"}, "zh", "en", &failure);
     }
     else if (request.service == "translation.tencent")
     {
@@ -315,6 +320,8 @@ ApiCredentialTest::Result TestTranslation(const ApiCredentialTest::Request &requ
     }
     if (!translated.empty() && !translated.front().empty())
         return {true, "连接成功，翻译服务配置有效。"};
+    if (!failure.empty())
+        return {false, "测试失败：" + failure};
     return {false, "测试失败：服务未返回有效译文，请检查凭据、接口地址和网络。"};
 }
 } // namespace
