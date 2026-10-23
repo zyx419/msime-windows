@@ -109,6 +109,8 @@ ChatVendor VendorFromChatEndpoint(std::string_view endpoint)
         return ChatVendor::Groq;
     if (owned_by("openai.com"))
         return ChatVendor::OpenAI;
+    if (owned_by("anthropic.com"))
+        return ChatVendor::Anthropic;
     return ChatVendor::Other;
 }
 
@@ -132,6 +134,8 @@ ChatVendor VendorForRequest(std::string_view provider, std::string_view endpoint
         return ChatVendor::Groq;
     if (id == "openai")
         return ChatVendor::OpenAI;
+    if (id == "anthropic")
+        return ChatVendor::Anthropic;
     return ChatVendor::Other;
 }
 

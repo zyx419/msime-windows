@@ -45,7 +45,8 @@ enum class ChatVendor
     DeepSeek,
     SiliconFlow,
     Groq,
-    OpenAI
+    OpenAI,
+    Anthropic
 };
 
 ChatVendor VendorFromChatEndpoint(std::string_view endpoint);
