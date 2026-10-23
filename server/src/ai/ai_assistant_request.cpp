@@ -25,7 +25,7 @@ nlohmann::json BuildRequestBody(const Request &request)
         {"response_format", {{"type", "json_object"}}},
         {"messages",
          {{{"role", "system"}, {"content", config.prompt}}, {{"role", "user"}, {"content", input.dump()}}}}};
-    if (!openai_reasoning)
+    if (!openai_reasoning && ChatCompletions::AcceptsTemperature(config.provider, config.endpoint))
         body["temperature"] = 0.2;
     // Reasoning tokens count against the output limit and can leave no room for JSON.
     ChatCompletions::SetTokenLimit(body, config.provider, thinking || openai_reasoning ? 8192 : 512);

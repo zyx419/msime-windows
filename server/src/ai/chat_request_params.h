@@ -38,6 +38,15 @@ inline bool IsOpenAiReasoningRequest(std::string_view provider, std::string_view
     return IsOpenAiProvider(provider) && IsOpenAiReasoningModel(model);
 }
 
+// Anthropic's OpenAI-compatible endpoint rejects any temperature below 1 on Claude 4.7 and later
+// ("`temperature` is deprecated for this model.") and caps anything above 1, so the field is
+// never useful there. Keyed off the endpoint like the other vendor fields, so a custom slot
+// pointed at api.anthropic.com is covered as well.
+inline bool AcceptsTemperature(std::string_view provider, std::string_view endpoint)
+{
+    return VoiceInput::VendorForRequest(provider, endpoint) != VoiceInput::ChatVendor::Anthropic;
+}
+
 // The default effort is medium, which regularly outlasts an IME request. "low" is the lowest
 // level every o-series and GPT-5 family model accepts.
 inline constexpr const char *kOpenAiReasoningEffort = "low";
