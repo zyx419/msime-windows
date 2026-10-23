@@ -104,6 +104,7 @@ TEST_CASE(ai_provider_store_seeds_every_builtin_provider)
     REQUIRE_EQ(seeded.size(), ids.size());
     REQUIRE_EQ(seeded.front().id, std::string("deepseek"));
     REQUIRE(AiAssistant::ProviderStore::IsBuiltinProvider("openrouter"));
+    REQUIRE(AiAssistant::ProviderStore::IsBuiltinProvider("anthropic"));
     REQUIRE(!AiAssistant::ProviderStore::IsBuiltinProvider("my-relay"));
 }
 
@@ -161,7 +162,7 @@ TEST_CASE(ai_provider_store_defaults_match_the_config_struct)
     // 改了忘改另一处，用户就会看到「占位符写着 A、实际请求发的是 B」。
     const AiAssistantConfig config;
     for (const char *id : {"deepseek", "openai", "siliconflow", "groq", "minimax", "moonshot", "zhipu", "dashscope",
-                           "volcengine", "openrouter", "ollama", "jev"})
+                           "volcengine", "openrouter", "anthropic", "ollama", "jev"})
     {
         REQUIRE_EQ(config.endpoints.at(id), AiAssistant::ProviderStore::BuiltinDefaultEndpoint(id));
         REQUIRE_EQ(config.models.at(id), AiAssistant::ProviderStore::BuiltinDefaultModel(id));

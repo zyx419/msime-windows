@@ -82,6 +82,22 @@ TEST_CASE(AiTranslationKeepsOtherProviderRequestShape)
     REQUIRE(!custom.contains("thinking"));
 }
 
+TEST_CASE(AiTranslationOmitsTemperatureForAnthropic)
+{
+    // Claude 4.7 及以后的模型对低于 1 的 temperature 直接返回 400：
+    // "`temperature` is deprecated for this model."，翻译测试因此只报「服务未返回有效译文」。
+    for (const char *provider : {"anthropic", "custom"})
+    {
+        AiTranslation::Config config{provider, "https://api.anthropic.com/v1/chat/completions", "sk-ant-test",
+                                     "claude-haiku-5-5"};
+        const auto body = AiTranslation::detail::BuildRequestBody(config, {"你好"}, "zh", "en");
+        REQUIRE(!body.contains("temperature"));
+        REQUIRE(!body.contains("reasoning_effort"));
+        REQUIRE(!body.contains("thinking"));
+        REQUIRE_EQ(body["model"].get<std::string>(), std::string("claude-haiku-5-5"));
+    }
+}
+
 TEST_CASE(AiTranslationRejectsRepliesThatDoNotLineUp)
 {
     // 合法 JSON 但没有约定的键：不能把整段回复当译文。

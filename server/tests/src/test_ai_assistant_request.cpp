@@ -122,6 +122,22 @@ TEST_CASE(ai_request_keeps_custom_provider_request_shape)
     REQUIRE(!body.contains("thinking"));
 }
 
+TEST_CASE(ai_request_omits_temperature_for_anthropic)
+{
+    // 不论走 anthropic 槽位还是把 custom 指向 api.anthropic.com，都不能带 temperature。
+    for (const char *provider : {"anthropic", "custom"})
+    {
+        auto request = MakeRequest(provider, "disabled", "https://api.anthropic.com/v1/chat/completions");
+        request.config.model = "claude-haiku-5-5";
+        const auto body = AiAssistant::detail::BuildRequestBody(request);
+        REQUIRE(!body.contains("temperature"));
+        REQUIRE_EQ(body["max_tokens"].get<int>(), 512);
+        REQUIRE(!body.contains("max_completion_tokens"));
+        REQUIRE(!body.contains("reasoning_effort"));
+        REQUIRE(!body.contains("thinking"));
+    }
+}
+
 TEST_CASE(credential_test_uses_openai_completion_limit)
 {
     const auto older_model = ApiCredentialTest::detail::BuildChatProbeRequestBody("openai", "gpt-4o-mini");

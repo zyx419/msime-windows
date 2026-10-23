@@ -15,6 +15,8 @@ TEST_CASE(chat_vendor_is_read_from_the_endpoint_host)
                ChatVendor::SiliconFlow);
     REQUIRE_EQ(VoiceInput::VendorFromChatEndpoint("https://api.groq.com/openai/v1/chat/completions"), ChatVendor::Groq);
     REQUIRE_EQ(VoiceInput::VendorFromChatEndpoint("https://api.openai.com/v1/chat/completions"), ChatVendor::OpenAI);
+    REQUIRE_EQ(VoiceInput::VendorFromChatEndpoint("https://api.anthropic.com/v1/chat/completions"),
+               ChatVendor::Anthropic);
     // Host matching is case-insensitive and tolerates userinfo and an explicit port.
     REQUIRE_EQ(VoiceInput::VendorFromChatEndpoint("https://API.DeepSeek.COM/v1/chat/completions"),
                ChatVendor::DeepSeek);
@@ -57,6 +59,9 @@ TEST_CASE(vendor_label_is_only_a_fallback_when_there_is_no_endpoint)
     REQUIRE_EQ(VoiceInput::VendorForRequest("deepseek", ""), ChatVendor::DeepSeek);
     REQUIRE_EQ(VoiceInput::VendorForRequest("SiliconFlow", ""), ChatVendor::SiliconFlow);
     REQUIRE_EQ(VoiceInput::VendorForRequest("custom", ""), ChatVendor::Other);
+    REQUIRE_EQ(VoiceInput::VendorForRequest("anthropic", ""), ChatVendor::Anthropic);
+    REQUIRE_EQ(VoiceInput::VendorForRequest("custom", "https://api.anthropic.com/v1/chat/completions"),
+               ChatVendor::Anthropic);
     // Once an endpoint is known it outranks the label in both directions.
     REQUIRE_EQ(VoiceInput::VendorForRequest("custom", "https://api.groq.com/openai/v1/chat/completions"),
                ChatVendor::Groq);
