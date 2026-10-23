@@ -92,10 +92,24 @@ TEST_CASE(AiTranslationOmitsTemperatureForAnthropic)
                                      "claude-haiku-5-5"};
         const auto body = AiTranslation::detail::BuildRequestBody(config, {"你好"}, "zh", "en");
         REQUIRE(!body.contains("temperature"));
+        // 带 json_object 直接 400："response_format.type: Input should be 'json_schema'"。
+        REQUIRE(!body.contains("response_format"));
         REQUIRE(!body.contains("reasoning_effort"));
         REQUIRE(!body.contains("thinking"));
         REQUIRE_EQ(body["model"].get<std::string>(), std::string("claude-haiku-5-5"));
     }
+}
+
+TEST_CASE(AiTranslationParsesFencedClaudeReplies)
+{
+    // 2026-10-23 从 api.anthropic.com 抓的原样回复：claude-haiku-4-5 会套 ```json 围栏，
+    // claude-haiku-5-5 给裸 JSON。两种都必须解析出来。
+    const auto fenced =
+        AiTranslation::ParseTranslations("```json\n{\"translations\":[\"test\",\"world\",\"hello\"]}\n```", 3);
+    REQUIRE_EQ(fenced[0], std::string("test"));
+    REQUIRE_EQ(fenced[2], std::string("hello"));
+    const auto bare = AiTranslation::ParseTranslations(R"({"translations":["test","world","hello"]})", 3);
+    REQUIRE_EQ(bare[1], std::string("world"));
 }
 
 TEST_CASE(AiTranslationRejectsRepliesThatDoNotLineUp)

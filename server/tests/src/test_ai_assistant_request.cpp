@@ -1,4 +1,5 @@
 #include "ai/ai_assistant_request.h"
+#include "ai/chat_completions.h"
 #include "settings/api_credential_test_request.h"
 #include "tests/includes/test_framework.h"
 
@@ -131,11 +132,25 @@ TEST_CASE(ai_request_omits_temperature_for_anthropic)
         request.config.model = "claude-haiku-5-5";
         const auto body = AiAssistant::detail::BuildRequestBody(request);
         REQUIRE(!body.contains("temperature"));
+        REQUIRE(!body.contains("response_format"));
         REQUIRE_EQ(body["max_tokens"].get<int>(), 512);
         REQUIRE(!body.contains("max_completion_tokens"));
         REQUIRE(!body.contains("reasoning_effort"));
         REQUIRE(!body.contains("thinking"));
     }
+}
+
+TEST_CASE(chat_content_code_fence_is_stripped)
+{
+    // claude-haiku-4-5 对 AI 联想的原样回复（2026-10-23 抓取），不去围栏 JSON 解析会直接失败。
+    const std::string fenced =
+        "```json\n{\n  \"candidates\": [\n    {\"text\": \"上海\", \"type\": \"chinese\"}\n  ]\n}\n```";
+    const auto parsed = nlohmann::json::parse(ChatCompletions::StripCodeFence(fenced));
+    REQUIRE_EQ(parsed["candidates"][0]["text"].get<std::string>(), std::string("上海"));
+    // 没有围栏的回复原样保留（只去首尾空白）。
+    REQUIRE_EQ(ChatCompletions::StripCodeFence("  {\"a\":1}\n"), std::string("{\"a\":1}"));
+    REQUIRE_EQ(ChatCompletions::StripCodeFence("```\n[1]\n```"), std::string("[1]"));
+    REQUIRE(ChatCompletions::StripCodeFence("   ").empty());
 }
 
 TEST_CASE(credential_test_uses_openai_completion_limit)
