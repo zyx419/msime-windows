@@ -96,11 +96,13 @@ struct AiAssistantConfig
         {"dashscope", "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"},
         {"volcengine", "https://ark.cn-beijing.volces.com/api/v3/chat/completions"},
         {"openrouter", "https://openrouter.ai/api/v1/chat/completions"},
+        {"anthropic", "https://api.anthropic.com/v1/chat/completions"},
         {"jev", "https://api.typesafe.ai/v1/systemone"},
         {"ollama", "http://localhost:11434/v1/chat/completions"},
         {"custom", ""}};
     // Groq 已弃用 llama-3.3-70b-versatile，默认模型改用 qwen/qwen3.8-27b。
     // custom 槽位不预设接口地址和模型，全部由用户填写并单独保存。ollama 不预设模型：本机装了哪些模型因人而异。
+    // anthropic 不预设模型：Claude 型号更新快，用「查询模型」选。
     std::map<std::string, std::string> models{{"deepseek", "deepseek-v4-flash"},
                                               {"openai", "gpt-4o-mini"},
                                               {"siliconflow", "Qwen/Qwen3-8B"},
@@ -111,6 +113,7 @@ struct AiAssistantConfig
                                               {"dashscope", "qwen-plus"},
                                               {"volcengine", "doubao-seed-1.6-flash"},
                                               {"openrouter", "openrouter/auto"},
+                                              {"anthropic", ""},
                                               {"jev", "jev-1.13.0"},
                                               {"ollama", ""},
                                               {"custom", ""}};
