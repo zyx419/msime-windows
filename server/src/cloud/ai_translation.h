@@ -38,8 +38,10 @@ long RequestTimeoutMs(const Config &config);
 // Translates the whole batch in a single Chat Completions request, reusing the
 // provider, endpoint, token and model configured on the AI 辅助 page. Empty
 // entries mean that item failed or could not be parsed.
+// error 非空时写入失败原因（HTTP 状态与服务端错误信息，或回复无法解析），只给设置页的凭据测试用。
 std::vector<std::string> TextTranslateBatch(const Config &config, const std::vector<std::string> &texts,
-                                            const std::string &source, const std::string &target);
+                                            const std::string &source, const std::string &target,
+                                            std::string *error = nullptr);
 
 // Parses the translation list out of an LLM response string. Anything that does not
 // line up one-to-one with the request yields empty entries rather than a guess.

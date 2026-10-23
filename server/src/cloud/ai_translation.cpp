@@ -194,10 +194,11 @@ nlohmann::json BuildRequestBody(const Config &config, const std::vector<std::str
 {
     nlohmann::json body = {{"model", config.model},
                            {"stream", false},
-                           {"response_format", {{"type", "json_object"}}},
                            {"messages",
                             {{{"role", "system"}, {"content", BuildSystemPrompt(source, target)}},
                              {{"role", "user"}, {"content", nlohmann::json(texts).dump()}}}}};
+    if (ChatCompletions::AcceptsJsonObjectFormat(config.provider, config.endpoint))
+        body["response_format"] = {{"type", "json_object"}};
     if (ChatCompletions::IsOpenAiReasoningRequest(config.provider, config.model))
         body["reasoning_effort"] = ChatCompletions::kOpenAiReasoningEffort;
     else if (ChatCompletions::AcceptsTemperature(config.provider, config.endpoint))
@@ -219,15 +220,24 @@ long RequestTimeoutMs(const Config &config)
 } // namespace detail
 
 std::vector<std::string> TextTranslateBatch(const Config &config, const std::vector<std::string> &texts,
-                                            const std::string &source, const std::string &target)
+                                            const std::string &source, const std::string &target, std::string *error)
 {
     std::vector<std::string> results(texts.size());
     if (texts.empty() || !IsUsableConfig(config) || source.empty() || target.empty())
         return results;
 
     const auto body = detail::BuildRequestBody(config, texts, source, target);
-    const auto content =
-        ChatCompletions::FetchContent(config.endpoint, config.token, body.dump(), detail::RequestTimeoutMs(config));
-    return content ? ParseTranslations(*content, texts.size()) : results;
+    const auto content = ChatCompletions::FetchContent(config.endpoint, config.token, body.dump(),
+                                                       detail::RequestTimeoutMs(config), error);
+    if (!content)
+        return results;
+    results = ParseTranslations(*content, texts.size());
+    if (error && std::all_of(results.begin(), results.end(), [](const std::string &item) { return item.empty(); }))
+    {
+        // 只截一小段，够判断是格式不对还是答非所问。
+        std::string head = content->substr(0, 120);
+        *error = "回复无法解析成译文：" + head;
+    }
+    return results;
 }
 } // namespace AiTranslation
