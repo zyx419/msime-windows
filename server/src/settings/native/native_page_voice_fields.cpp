@@ -1172,7 +1172,7 @@ const std::map<std::string, std::wstring> &BuiltinAiNames()
         {"zhipu", L"智谱 GLM"},          {"dashscope", L"通义千问"},
         {"volcengine", L"火山方舟"},     {"openrouter", L"OpenRouter"},
         {"ollama", L"Ollama"},           {"custom", L"自定义接口"},
-        {"jev", L"Jev (TypeSafe)"},
+        {"jev", L"Jev (TypeSafe)"},      {"anthropic", L"Anthropic Claude"},
     };
     return names;
 }
